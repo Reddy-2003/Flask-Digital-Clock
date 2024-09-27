@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Clock</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            background: linear-gradient(135deg, #4A90E2, #50E3C2);
+            position: relative;
+            animation: backgroundAnimation 20s infinite alternate;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            padding: 50px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 100px;
+            color: white;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+            transition: all 0.5s ease;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        select {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 5px;
+        }
+
+        @keyframes backgroundAnimation {
+            0% { background: linear-gradient(135deg, #4A90E2, #50E3C2); }
+            25% { background: linear-gradient(135deg, #6a11cb, #2575fc); }
+            50% { background: linear-gradient(135deg, #00c6ff, #0072ff); }
+            75% { background: linear-gradient(135deg, #ff6a00, #ee0979); }
+            100% { background: linear-gradient(135deg, #6a11cb, #ff77a0); }
+        }
+
+        /* Animated Shapes */
+        .shape {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: moveShapes 10s linear infinite;
+            filter: blur(8px);
+        }
+
+        @keyframes moveShapes {
+            0% {
+                transform: translate(-200px, -200px);
+            }
+            50% {
+                transform: translate(100vw, 100vh);
+            }
+            100% {
+                transform: translate(-200px, -200px);
+            }
+        }
+
+        /* Additional shapes for variety */
+        .shape:nth-child(1) {
+            background: rgba(255, 0, 0, 0.3);
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        .shape:nth-child(2) {
+            background: rgba(0, 255, 0, 0.3);
+            top: 60%;
+            left: 70%;
+            animation-delay: 2s;
+        }
+        .shape:nth-child(3) {
+            background: rgba(0, 0, 255, 0.3);
+            top: 80%;
+            left: 40%;
+            animation-delay: 4s;
+        }
+        .shape:nth-child(4) {
+            background: rgba(255, 255, 0, 0.3);
+            top: 40%;
+            left: 20%;
+            animation-delay: 6s;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass">
+        <h1 id="clock">{{ current_time }}</h1>
+        <select id="country" onchange="changeCountry()">
+            <option value="United States" {% if country == 'United States' %}selected{% endif %}>United States</option>
+            <option value="Canada" {% if country == 'Canada' %}selected{% endif %}>Canada</option>
+            <option value="United Kingdom" {% if country == 'United Kingdom' %}selected{% endif %}>United Kingdom</option>
+            <option value="Germany" {% if country == 'Germany' %}selected{% endif %}>Germany</option>
+            <option value="Australia" {% if country == 'Australia' %}selected{% endif %}>Australia</option>
+            <option value="India" {% if country == 'India' %}selected{% endif %}>India</option>
+            <option value="Japan" {% if country == 'Japan' %}selected{% endif %}>Japan</option>
+            <option value="Singapore" {% if country == 'Singapore' %}selected{% endif %}>Singapore</option>
+            <option value="China" {% if country == 'China' %}selected{% endif %}>China</option>
+            <option value="Brazil" {% if country == 'Brazil' %}selected{% endif %}>Brazil</option>
+            <!-- Add more countries as needed -->
+        </select>
+        <button id="toggleClock">Hide Clock</button>
+    </div>
+
+    <!-- Background Shapes -->
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+
+    <script>
+        // Update the clock display every second based on selected timezone
+        function updateClock(timezone) {
+            fetch(`/time?timezone=${timezone}`)
+                .then(response => response.text())
+                .then(currentTime => {
+                    document.getElementById('clock').innerText = currentTime;
+                });
+        }
+
+        // Get the initial timezone from the server and update the clock every second
+        const timezone = "{{ country_timezones[country] }}";  // Get timezone from the server
+        setInterval(() => updateClock(timezone), 1000);
+
+        // Toggle clock visibility
+        const toggleButton = document.getElementById('toggleClock');
+        toggleButton.addEventListener('click', function() {
+            const clockElement = document.getElementById('clock');
+            if (clockElement.style.display === 'none') {
+                clockElement.style.display = 'block';
+                toggleButton.innerText = 'Hide Clock';
+            } else {
+                clockElement.style.display = 'none';
+                toggleButton.innerText = 'Show Clock';
+            }
+        });
+
+        // Change country function
+        function changeCountry() {
+            const country = document.getElementById('country').value;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'country';
+            input.value = country;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+</body>
+</html>
